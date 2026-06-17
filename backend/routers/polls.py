@@ -35,6 +35,13 @@ async def get_polls(search: Optional[str] = None, status: Optional[str] = None):
     polls = await Poll.find(query).to_list()
     return polls
 
+@router.get("/{poll_id}")
+async def get_poll(poll_id: PydanticObjectId):
+    poll = await Poll.get(poll_id)
+    if not poll:
+        raise HTTPException(status_code=404, detail="Poll not found")
+    return poll
+
 @router.post("/", dependencies=[Depends(auth.get_current_admin)])
 async def create_poll(poll_data: PollCreate, current_user: User = Depends(auth.get_current_admin)):
     poll = Poll(
@@ -95,24 +102,35 @@ async def vote_poll(poll_id: PydanticObjectId, vote_req: VoteRequest, current_us
         raise HTTPException(status_code=404, detail="Poll not found")
         
     if poll.status != "open":
-        raise HTTPException(status_code=400, detail="Poll is not open for voting")
+        raise HTTPException(status_code=400, detail="Kỳ bầu cử chưa mở hoặc đã đóng.")
         
     if not current_user.is_profile_complete:
         raise HTTPException(status_code=403, detail="Vui lòng hoàn thiện thông tin cá nhân trước khi bình chọn.")
         
     now = datetime.now(timezone.utc)
-    if not (poll.start_time <= now <= poll.end_time):
-        raise HTTPException(status_code=400, detail="Poll is outside of voting window")
+    start = poll.start_time.replace(tzinfo=timezone.utc) if poll.start_time.tzinfo is None else poll.start_time
+    end = poll.end_time.replace(tzinfo=timezone.utc) if poll.end_time.tzinfo is None else poll.end_time
+    
+    if not (start <= now <= end):
+        raise HTTPException(status_code=400, detail="Hiện không nằm trong thời gian bỏ phiếu hợp lệ.")
         
     # Check if user already voted
     existing_vote = await Vote.find_one(Vote.user_id == str(current_user.id), Vote.poll_id == str(poll_id))
     if existing_vote:
-        raise HTTPException(status_code=400, detail="User has already voted on this poll")
+        raise HTTPException(status_code=400, detail="Bạn đã bỏ phiếu cho kỳ bầu cử này rồi.")
         
-    # Atomic update via Beanie positional operator
-    update_result = await Poll.find_one({"_id": poll_id, "options.id": vote_req.option_id}).update({"$inc": {"options.$.vote_count": 1}})
-    if not update_result:
-        raise HTTPException(status_code=400, detail="Failed to record vote. Option may be invalid.")
+    # Update vote count safely
+    option_found = False
+    for opt in poll.options:
+        if opt.id == vote_req.option_id:
+            opt.vote_count += 1
+            option_found = True
+            break
+            
+    if not option_found:
+        raise HTTPException(status_code=400, detail="Tùy chọn ứng viên không hợp lệ.")
+        
+    await poll.save()
     
     # Save Vote record
     new_vote = Vote(
