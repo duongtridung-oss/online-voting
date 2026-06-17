@@ -14,6 +14,8 @@ class User(Document):
     full_name: Optional[str] = None
     phone_number: Optional[str] = None
     date_of_birth: Optional[str] = None
+    address: Optional[str] = None
+    voter_id: Optional[str] = None
     is_profile_complete: bool = False
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
@@ -25,8 +27,21 @@ class PollOption(BaseModel):
     id: str
     name: str
     description: str
+    candidate_id: Optional[str] = None
     vote_count: int = 0
     order: int = 0
+
+class Candidate(Document):
+    full_name: str
+    age: int
+    party: str
+    biography: str
+    avatar_url: Optional[str] = None
+    symbol_url: Optional[str] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+    class Settings:
+        name = "candidates"
 
 class Poll(Document):
     title: str
