@@ -13,6 +13,9 @@ class UserCreate(BaseModel):
     username: str
     email: EmailStr
     password: str
+    full_name: str
+    voter_id: str
+    address: str
 
 class UserResponse(BaseModel):
     id: str
@@ -21,6 +24,8 @@ class UserResponse(BaseModel):
     role: str
     is_active: bool
     full_name: Optional[str] = None
+    voter_id: Optional[str] = None
+    address: Optional[str] = None
     phone_number: Optional[str] = None
     date_of_birth: Optional[str] = None
     is_profile_complete: bool
@@ -29,6 +34,7 @@ class ProfileUpdate(BaseModel):
     full_name: str
     phone_number: Optional[str] = None
     date_of_birth: Optional[str] = None
+    address: Optional[str] = None
 
 class Token(BaseModel):
     access_token: str
@@ -52,13 +58,19 @@ async def register(user_data: UserCreate):
         raise HTTPException(status_code=400, detail="Tên người dùng đã được đăng ký")
     if await User.find_one(User.email == user_data.email):
         raise HTTPException(status_code=400, detail="Email đã được đăng ký")
+    if await User.find_one(User.voter_id == user_data.voter_id):
+        raise HTTPException(status_code=400, detail="Mã cử tri đã được đăng ký")
     
     hashed_password = auth.get_password_hash(user_data.password)
     new_user = User(
         username=user_data.username,
         email=user_data.email,
         hashed_password=hashed_password,
-        role="user"
+        full_name=user_data.full_name,
+        voter_id=user_data.voter_id,
+        address=user_data.address,
+        role="user",
+        is_profile_complete=True
     )
     await new_user.insert()
     
@@ -69,6 +81,8 @@ async def register(user_data: UserCreate):
         role=new_user.role,
         is_active=new_user.is_active,
         full_name=new_user.full_name,
+        voter_id=new_user.voter_id,
+        address=new_user.address,
         phone_number=new_user.phone_number,
         date_of_birth=new_user.date_of_birth,
         is_profile_complete=new_user.is_profile_complete
