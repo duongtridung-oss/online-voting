@@ -35,7 +35,8 @@ const AdminLayout = () => {
 
   const navItems = [
     { path: '/admin/dashboard', icon: LayoutDashboard, label: 'Thống kê chính' },
-    { path: '/admin/users', icon: Users, label: 'Quản lý Người dùng' },
+    { path: '/admin/candidates', icon: Users, label: 'Quản lý Ứng viên' },
+    { path: '/admin/users', icon: Activity, label: 'Quản lý Cử tri' },
     { path: '/admin/polls', icon: Vote, label: 'Quản lý Bình chọn' },
   ];
 

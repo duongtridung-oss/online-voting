@@ -20,6 +20,19 @@ const dataBar = [
 ];
 
 const AdminDashboard = () => {
+  const [stats, setStats] = React.useState({
+    total_users: 0,
+    total_polls: 0,
+    total_votes: 0,
+    active_users: 0
+  });
+
+  React.useEffect(() => {
+    import('../../services/adminService').then(({ adminService }) => {
+      adminService.getStats().then(setStats).catch(console.error);
+    });
+  }, []);
+
   return (
     <div className="space-y-6">
       <div>
@@ -32,32 +45,32 @@ const AdminDashboard = () => {
         <StatCard 
           icon={<Users size={24} />} 
           label="Tổng Người dùng" 
-          value="12,345" 
-          trend="+12%" 
+          value={stats.total_users} 
+          trend="Cử tri" 
           color="bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400" 
           delay={0.1}
         />
         <StatCard 
           icon={<Vote size={24} />} 
           label="Tổng Bình chọn" 
-          value="51" 
-          trend="+3 mới" 
+          value={stats.total_polls} 
+          trend="Chiến dịch" 
           color="bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400" 
           delay={0.2}
         />
         <StatCard 
           icon={<CheckCircle2 size={24} />} 
           label="Tổng Phiếu bầu" 
-          value="842,104" 
-          trend="+5.4%" 
+          value={stats.total_votes} 
+          trend="Phiếu" 
           color="bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400" 
           delay={0.3}
         />
         <StatCard 
           icon={<AlertCircle size={24} />} 
-          label="Đang trực tuyến" 
-          value="1,204" 
-          trend="Ổn định" 
+          label="Đang Hoạt động" 
+          value={stats.active_users} 
+          trend="Trực tuyến" 
           color="bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400" 
           delay={0.4}
         />

@@ -38,13 +38,13 @@ const LandingPage = () => {
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-3 w-3 bg-primary-500"></span>
                 </span>
-                Nền tảng Bình chọn Thế hệ Mới
+                Hệ thống Bầu cử Trực tuyến Toàn dân
               </motion.div>
 
               <h1 className="text-5xl md:text-6xl lg:text-7xl font-black tracking-tight leading-[1.1]">
-                Tôn vinh Tiếng nói với <br className="hidden lg:block" />
+                Phát huy Quyền làm chủ với <br className="hidden lg:block" />
                 <span className="text-transparent bg-clip-text bg-gradient-to-br from-primary-600 via-purple-600 to-primary-400 dark:from-primary-400 dark:via-purple-400 dark:to-primary-300 relative">
-                  Bình chọn Thông minh
+                  Bầu cử Thông minh
                   <motion.span 
                     initial={{ width: 0 }} animate={{ width: "100%" }} transition={{ delay: 1, duration: 0.8 }}
                     className="absolute -bottom-2 left-0 h-2 bg-gradient-to-r from-primary-600 to-purple-600 rounded-full opacity-50"
@@ -53,7 +53,7 @@ const LandingPage = () => {
               </h1>
 
               <p className="text-lg md:text-xl text-gray-600 dark:text-gray-400 leading-relaxed font-medium">
-                Trải nghiệm nền tảng bảo mật, minh bạch và thân thiện nhất để tổ chức các cuộc bình chọn ở mọi quy mô. Kết quả thời gian thực, bảo mật tuyệt đối.
+                Trải nghiệm hệ thống bỏ phiếu quốc gia bảo mật, minh bạch và thân thiện nhất. Đảm bảo tính nặc danh tuyệt đối, kết quả kiểm phiếu chuẩn xác thời gian thực.
               </p>
 
               <motion.div 
@@ -61,11 +61,11 @@ const LandingPage = () => {
                 className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-2"
               >
                 <Link to={isAuthenticated ? "/dashboard" : "/register"} className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-primary-600 to-primary-500 text-white font-bold text-lg shadow-xl shadow-primary-500/30 hover:shadow-primary-500/50 transition-all duration-300 hover:-translate-y-1 hover:scale-105 flex items-center justify-center gap-2 group border border-primary-500/50">
-                  {isAuthenticated ? "Vào Bảng Điều Khiển" : "Bắt đầu Miễn phí"} 
+                  {isAuthenticated ? "Vào Bảng Điều Khiển" : "Đăng ký Cử tri"} 
                   <ChevronRight size={20} className="group-hover:translate-x-1 transition-transform" />
                 </Link>
                 <Link to={isAuthenticated ? "/dashboard" : "/login"} className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-white/80 dark:bg-gray-900/80 backdrop-blur-md text-gray-900 dark:text-white font-bold text-lg border border-gray-200 dark:border-gray-800 hover:border-primary-500/50 transition-all duration-300 hover:-translate-y-1 hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center justify-center">
-                  Xem Bình chọn Trực tiếp
+                  Xem Kết quả Bầu cử
                 </Link>
               </motion.div>
 
@@ -74,10 +74,10 @@ const LandingPage = () => {
                 className="flex items-center justify-center lg:justify-start gap-6 pt-4 text-sm text-gray-500 dark:text-gray-400 font-medium"
               >
                 <div className="flex items-center gap-2">
-                  <CheckCircle2 size={18} className="text-emerald-500" /> Không cần thẻ tín dụng
+                  <CheckCircle2 size={18} className="text-emerald-500" /> Xác thực Công dân số
                 </div>
                 <div className="flex items-center gap-2">
-                  <CheckCircle2 size={18} className="text-emerald-500" /> Cài đặt trong 2 phút
+                  <CheckCircle2 size={18} className="text-emerald-500" /> Mã hóa Đầu - Cuối
                 </div>
               </motion.div>
             </motion.div>
@@ -91,8 +91,8 @@ const LandingPage = () => {
               <div className="relative z-10 w-full max-w-md mx-auto bg-white/60 dark:bg-gray-900/60 backdrop-blur-2xl border border-white/20 dark:border-gray-700/50 rounded-3xl shadow-2xl p-6 transform-gpu hover:-translate-y-2 hover:rotate-1 transition-all duration-500">
                 <div className="flex items-center justify-between mb-6">
                   <div>
-                    <h3 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-400">Quản lý Dự án Phoenix</h3>
-                    <p className="text-sm text-gray-500 flex items-center gap-1 mt-1"><Clock size={14}/> Kết thúc trong 2 giờ</p>
+                    <h3 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-400">Bầu cử Đại biểu Quốc hội</h3>
+                    <p className="text-sm text-gray-500 flex items-center gap-1 mt-1"><Clock size={14}/> Đóng thùng phiếu trong 2 giờ</p>
                   </div>
                   <div className="h-10 w-10 rounded-full bg-primary-100 dark:bg-primary-900/50 flex items-center justify-center text-primary-600 dark:text-primary-400 font-bold">
                     V
@@ -100,14 +100,14 @@ const LandingPage = () => {
                 </div>
 
                 <div className="space-y-4">
-                  <MockPollOption name="Alex Rivera" percentage={65} color="bg-primary-500" delay={1} />
-                  <MockPollOption name="Jordan Lee" percentage={25} color="bg-purple-500" delay={1.2} />
-                  <MockPollOption name="Sam Taylor" percentage={10} color="bg-emerald-500" delay={1.4} />
+                  <MockPollOption name="Đồng chí Nguyễn Văn A" percentage={65} color="bg-primary-500" delay={1} />
+                  <MockPollOption name="Đồng chí Lê Thị B" percentage={25} color="bg-purple-500" delay={1.2} />
+                  <MockPollOption name="Đồng chí Trần Văn C" percentage={10} color="bg-emerald-500" delay={1.4} />
                 </div>
 
                 <div className="mt-8 flex items-center justify-between text-sm font-medium text-gray-500">
-                  <span className="flex items-center gap-1"><Users size={16} /> 1,284 Phiếu</span>
-                  <span className="flex items-center gap-1 text-emerald-500"><Activity size={16} /> Đang diễn ra</span>
+                  <span className="flex items-center gap-1"><Users size={16} /> 1,284,500 Phiếu</span>
+                  <span className="flex items-center gap-1 text-emerald-500"><Activity size={16} /> Đang kiểm phiếu</span>
                 </div>
               </div>
 

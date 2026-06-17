@@ -20,6 +20,7 @@ import UserProfile from './pages/user/UserProfile';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import ManageUsers from './pages/admin/ManageUsers';
 import ManagePolls from './pages/admin/ManagePolls';
+import ManageCandidates from './pages/admin/ManageCandidates';
 
 import { AuthProvider } from './context/AuthContext';
 
@@ -47,6 +48,7 @@ function App() {
               <Route index element={<Navigate to="/admin/dashboard" replace />} />
               <Route path="dashboard" element={<AdminDashboard />} />
               <Route path="users" element={<ManageUsers />} />
+              <Route path="candidates" element={<ManageCandidates />} />
               <Route path="polls" element={<ManagePolls />} />
             </Route>
 
