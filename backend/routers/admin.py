@@ -11,6 +11,9 @@ class UserUpdate(BaseModel):
     role: Optional[str] = None
     email: Optional[str] = None
     username: Optional[str] = None
+    party: Optional[str] = None
+    biography: Optional[str] = None
+    symbol_url: Optional[str] = None
 
 class StatsResponse(BaseModel):
     total_users: int
@@ -58,6 +61,12 @@ async def update_user(user_id: PydanticObjectId, update_data: UserUpdate):
         user.email = update_data.email
     if update_data.username:
         user.username = update_data.username
+    if update_data.party is not None:
+        user.party = update_data.party
+    if update_data.biography is not None:
+        user.biography = update_data.biography
+    if update_data.symbol_url is not None:
+        user.symbol_url = update_data.symbol_url
         
     await user.save()
     return user

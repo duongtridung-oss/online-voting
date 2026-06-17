@@ -28,13 +28,18 @@ class UserResponse(BaseModel):
     address: Optional[str] = None
     phone_number: Optional[str] = None
     date_of_birth: Optional[str] = None
+    avatar_url: Optional[str] = None
+    party: Optional[str] = None
+    biography: Optional[str] = None
+    symbol_url: Optional[str] = None
     is_profile_complete: bool
 
 class ProfileUpdate(BaseModel):
     full_name: str
+    voter_id: Optional[str] = None
+    address: Optional[str] = None
     phone_number: Optional[str] = None
     date_of_birth: Optional[str] = None
-    address: Optional[str] = None
 
 class Token(BaseModel):
     access_token: str
@@ -74,19 +79,7 @@ async def register(user_data: UserCreate):
     )
     await new_user.insert()
     
-    return UserResponse(
-        id=str(new_user.id),
-        username=new_user.username,
-        email=new_user.email,
-        role=new_user.role,
-        is_active=new_user.is_active,
-        full_name=new_user.full_name,
-        voter_id=new_user.voter_id,
-        address=new_user.address,
-        phone_number=new_user.phone_number,
-        date_of_birth=new_user.date_of_birth,
-        is_profile_complete=new_user.is_profile_complete
-    )
+    return _user_to_response(new_user)
 
 @router.post("/token", response_model=Token)
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
@@ -106,39 +99,40 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
     )
     return {"access_token": access_token, "token_type": "bearer"}
 
+def _user_to_response(user: User) -> UserResponse:
+    return UserResponse(
+        id=str(user.id),
+        username=user.username,
+        email=user.email,
+        role=user.role,
+        is_active=user.is_active,
+        full_name=user.full_name,
+        voter_id=user.voter_id,
+        address=user.address,
+        phone_number=user.phone_number,
+        date_of_birth=user.date_of_birth,
+        avatar_url=user.avatar_url,
+        party=user.party,
+        biography=user.biography,
+        symbol_url=user.symbol_url,
+        is_profile_complete=user.is_profile_complete
+    )
+
 @router.get("/me", response_model=UserResponse)
 async def read_users_me(current_user: User = Depends(auth.get_current_user)):
-    return UserResponse(
-        id=str(current_user.id),
-        username=current_user.username,
-        email=current_user.email,
-        role=current_user.role,
-        is_active=current_user.is_active,
-        full_name=current_user.full_name,
-        phone_number=current_user.phone_number,
-        date_of_birth=current_user.date_of_birth,
-        is_profile_complete=current_user.is_profile_complete
-    )
+    return _user_to_response(current_user)
 
 @router.put("/profile", response_model=UserResponse)
 async def update_profile(profile_data: ProfileUpdate, current_user: User = Depends(auth.get_current_user)):
     current_user.full_name = profile_data.full_name
+    current_user.voter_id = profile_data.voter_id
+    current_user.address = profile_data.address
     current_user.phone_number = profile_data.phone_number
     current_user.date_of_birth = profile_data.date_of_birth
     current_user.is_profile_complete = True
     await current_user.save()
     
-    return UserResponse(
-        id=str(current_user.id),
-        username=current_user.username,
-        email=current_user.email,
-        role=current_user.role,
-        is_active=current_user.is_active,
-        full_name=current_user.full_name,
-        phone_number=current_user.phone_number,
-        date_of_birth=current_user.date_of_birth,
-        is_profile_complete=current_user.is_profile_complete
-    )
+    return _user_to_response(current_user)
 
 @router.post("/forgot-password")
 async def forgot_password(request: ForgotPasswordRequest):
