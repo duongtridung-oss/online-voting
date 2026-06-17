@@ -16,6 +16,9 @@ class User(Document):
     date_of_birth: Optional[str] = None
     address: Optional[str] = None
     voter_id: Optional[str] = None
+    party: Optional[str] = None
+    biography: Optional[str] = None
+    symbol_url: Optional[str] = None
     is_profile_complete: bool = False
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
