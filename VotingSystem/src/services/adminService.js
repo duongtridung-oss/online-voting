@@ -21,6 +21,11 @@ export const adminService = {
     return response.data;
   },
 
+  updateUser: async (userId, data) => {
+    const response = await api.put(`/admin/users/${userId}`, data);
+    return response.data;
+  },
+
   getCandidates: async (search = '') => {
     const response = await api.get('/candidates', { params: { search } });
     return response.data;
