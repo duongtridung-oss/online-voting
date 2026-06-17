@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Search, Filter, Trash2, Power, Eye, Clock, BarChart2, X, CheckCircle2 } from 'lucide-react';
+import { Plus, Search, Filter, Trash2, Power, Clock, BarChart2, X, CheckCircle2, UserPlus, Check } from 'lucide-react';
 import { pollService } from '../../services/pollService';
+import { adminService } from '../../services/adminService';
 
 const ManagePolls = () => {
   const [polls, setPolls] = useState([]);
@@ -10,10 +11,14 @@ const ManagePolls = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Candidate users list (from Manage Users -> role=candidate)
+  const [candidateUsers, setCandidateUsers] = useState([]);
+  const [selectedCandidateIds, setSelectedCandidateIds] = useState([]);
+  const [candidateSearch, setCandidateSearch] = useState('');
+
   // Form State
   const [formData, setFormData] = useState({
-    title: '', description: '', start_time: '', end_time: '',
-    options: [{ id: 'opt_1', name: '', description: '' }]
+    title: '', description: '', start_time: '', end_time: ''
   });
 
   const fetchPolls = async () => {
@@ -25,57 +30,71 @@ const ManagePolls = () => {
     }
   };
 
+  const fetchCandidateUsers = async () => {
+    try {
+      const data = await adminService.getUsers(candidateSearch, 'candidate');
+      setCandidateUsers(data);
+    } catch (error) {
+      console.error("Lỗi khi tải danh sách ứng viên:", error);
+    }
+  };
+
   useEffect(() => {
     const delayDebounce = setTimeout(() => fetchPolls(), 500);
     return () => clearTimeout(delayDebounce);
   }, [searchTerm, statusFilter]);
 
+  // When modal opens, fetch candidate users
+  useEffect(() => {
+    if (isCreateModalOpen) {
+      fetchCandidateUsers();
+    }
+  }, [isCreateModalOpen, candidateSearch]);
+
+  const toggleCandidateSelection = (userId) => {
+    setSelectedCandidateIds(prev =>
+      prev.includes(userId)
+        ? prev.filter(id => id !== userId)
+        : [...prev, userId]
+    );
+  };
+
   const handleCreatePoll = async (e) => {
     e.preventDefault();
+    if (selectedCandidateIds.length === 0) {
+      alert('Vui lòng chọn ít nhất một ứng viên!');
+      return;
+    }
     setIsSubmitting(true);
     try {
+      // Build options from selected candidate users
+      const options = selectedCandidateIds.map((userId, i) => {
+        const user = candidateUsers.find(u => u._id === userId);
+        return {
+          id: `opt_${Date.now()}_${i}`,
+          name: user?.full_name || user?.username || 'Ứng viên',
+          description: user?.party || user?.biography || '',
+          candidate_id: userId
+        };
+      });
+
       const formattedData = {
         ...formData,
         start_time: new Date(formData.start_time).toISOString(),
         end_time: new Date(formData.end_time).toISOString(),
-        options: formData.options.filter(opt => opt.name.trim() !== '').map((opt, i) => ({
-          ...opt,
-          id: `opt_${Date.now()}_${i}`
-        }))
+        options
       };
       await pollService.createPoll(formattedData);
       setIsCreateModalOpen(false);
       fetchPolls();
-      setFormData({
-        title: '', description: '', start_time: '', end_time: '',
-        options: [{ id: 'opt_1', name: '', description: '' }]
-      });
+      setFormData({ title: '', description: '', start_time: '', end_time: '' });
+      setSelectedCandidateIds([]);
+      setCandidateSearch('');
     } catch (error) {
       console.error("Lỗi tạo bầu cử:", error);
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  const addOption = () => {
-    setFormData(prev => ({
-      ...prev,
-      options: [...prev.options, { id: `opt_${Date.now()}`, name: '', description: '' }]
-    }));
-  };
-
-  const removeOption = (id) => {
-    setFormData(prev => ({
-      ...prev,
-      options: prev.options.filter(opt => opt.id !== id)
-    }));
-  };
-
-  const updateOption = (id, field, value) => {
-    setFormData(prev => ({
-      ...prev,
-      options: prev.options.map(opt => opt.id === id ? { ...opt, [field]: value } : opt)
-    }));
   };
 
   const togglePollStatus = async (id, currentStatus) => {
@@ -118,8 +137,8 @@ const ManagePolls = () => {
           <h1 className="text-3xl font-bold mb-1">Quản lý Bầu cử</h1>
           <p className="text-gray-500 dark:text-gray-400">Tạo mới, chỉnh sửa và theo dõi các cuộc bầu cử, biểu quyết.</p>
         </div>
-        
-        <button 
+
+        <button
           onClick={() => setIsCreateModalOpen(true)}
           className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all shadow-md flex items-center gap-2"
         >
@@ -160,7 +179,7 @@ const ManagePolls = () => {
           {polls.map((poll, index) => {
             const totalVotes = poll.options.reduce((sum, opt) => sum + opt.vote_count, 0);
             return (
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.2, delay: index * 0.05 }}
@@ -179,6 +198,7 @@ const ManagePolls = () => {
                   </h3>
                   <div className="text-sm text-gray-500 flex items-center gap-4">
                     <span className="flex items-center gap-1"><BarChart2 size={14} /> {totalVotes} Lượt bỏ phiếu</span>
+                    <span className="flex items-center gap-1"><UserPlus size={14} /> {poll.options.length} Ứng viên</span>
                   </div>
                 </div>
 
@@ -206,15 +226,16 @@ const ManagePolls = () => {
         </div>
       </div>
 
+      {/* Create Poll Modal */}
       <AnimatePresence>
         {isCreateModalOpen && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm"
               onClick={() => setIsCreateModalOpen(false)}
             />
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }}
               className="relative bg-white dark:bg-gray-900 rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]"
             >
@@ -224,48 +245,91 @@ const ManagePolls = () => {
                   <X size={20} />
                 </button>
               </div>
-              
+
               <form onSubmit={handleCreatePoll} className="flex flex-col flex-1 overflow-hidden">
                 <div className="p-6 overflow-y-auto flex-1 space-y-6">
                   <div>
                     <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Tiêu đề (Chủ đề bầu cử)</label>
-                    <input required type="text" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none dark:text-white" placeholder="VD: Bầu cử Đại biểu Quốc hội Khóa XV" />
+                    <input required type="text" value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none dark:text-white" placeholder="VD: Bầu cử Đại biểu Quốc hội Khóa XV" />
                   </div>
                   <div>
                     <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Mô tả mục đích</label>
-                    <textarea required rows="3" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none dark:text-white" placeholder="Mô tả chi tiết và thể lệ..."></textarea>
+                    <textarea required rows="3" value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none dark:text-white" placeholder="Mô tả chi tiết và thể lệ..."></textarea>
                   </div>
-                  
+
+                  {/* Candidate Selection */}
                   <div className="p-4 bg-blue-50/50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-800/50 rounded-xl">
                     <div className="flex justify-between items-center mb-4">
-                      <label className="block text-sm font-bold text-blue-800 dark:text-blue-300">Danh sách Ứng viên (Lựa chọn)</label>
-                      <button type="button" onClick={addOption} className="text-sm font-bold text-blue-600 hover:text-blue-700 dark:text-blue-400 flex items-center gap-1">
-                        <Plus size={16} /> Thêm Ứng viên
-                      </button>
+                      <label className="block text-sm font-bold text-blue-800 dark:text-blue-300">
+                        Chọn Ứng viên ({selectedCandidateIds.length} đã chọn)
+                      </label>
                     </div>
-                    <div className="space-y-3">
-                      {formData.options.map((opt, idx) => (
-                        <div key={opt.id} className="flex gap-2">
-                          <div className="flex-1 space-y-2">
-                            <input required type="text" value={opt.name} onChange={e => updateOption(opt.id, 'name', e.target.value)} className="w-full px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none dark:text-white" placeholder={`Tên ứng viên ${idx + 1}`} />
-                            <input type="text" value={opt.description} onChange={e => updateOption(opt.id, 'description', e.target.value)} className="w-full px-4 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none dark:text-white" placeholder={`Chức vụ / Tiểu sử tóm tắt (Không bắt buộc)`} />
-                          </div>
-                          {formData.options.length > 1 && (
-                            <button type="button" onClick={() => removeOption(opt.id)} className="p-2 self-start text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg"><Trash2 size={18} /></button>
-                          )}
+
+                    {/* Search candidates */}
+                    <div className="relative mb-3">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                      <input
+                        type="text"
+                        placeholder="Tìm ứng viên..."
+                        value={candidateSearch}
+                        onChange={(e) => setCandidateSearch(e.target.value)}
+                        className="w-full pl-9 pr-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none dark:text-white"
+                      />
+                    </div>
+
+                    {/* Candidate list */}
+                    <div className="space-y-2 max-h-60 overflow-y-auto">
+                      {candidateUsers.length === 0 ? (
+                        <div className="text-center py-6 text-gray-500 dark:text-gray-400 text-sm">
+                          <UserPlus size={24} className="mx-auto mb-2 text-gray-400" />
+                          <p>Chưa có ứng viên nào.</p>
+                          <p className="text-xs mt-1">Chuyển vai trò người dùng tại <span className="font-semibold">Quản lý Cử tri</span>.</p>
                         </div>
-                      ))}
+                      ) : (
+                        candidateUsers.map(candidate => {
+                          const isSelected = selectedCandidateIds.includes(candidate._id);
+                          return (
+                            <button
+                              key={candidate._id}
+                              type="button"
+                              onClick={() => toggleCandidateSelection(candidate._id)}
+                              className={`w-full flex items-center gap-3 p-3 rounded-xl border transition-all text-left ${
+                                isSelected
+                                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-500/50 ring-1 ring-blue-500/20'
+                                  : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-blue-300 dark:hover:border-blue-700'
+                              }`}
+                            >
+                              {/* Avatar */}
+                              <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm shrink-0 ${
+                                isSelected
+                                  ? 'bg-blue-600 text-white'
+                                  : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
+                              }`}>
+                                {isSelected ? <Check size={18} /> : (candidate.full_name || candidate.username || '?').charAt(0).toUpperCase()}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="font-bold text-sm text-gray-900 dark:text-white truncate">
+                                  {candidate.full_name || candidate.username}
+                                </div>
+                                <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                                  {candidate.party || candidate.email}
+                                </div>
+                              </div>
+                            </button>
+                          );
+                        })
+                      )}
                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Bắt đầu bỏ phiếu</label>
-                      <input required type="datetime-local" value={formData.start_time} onChange={e => setFormData({...formData, start_time: e.target.value})} className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none dark:text-white" />
+                      <input required type="datetime-local" value={formData.start_time} onChange={e => setFormData({ ...formData, start_time: e.target.value })} className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none dark:text-white" />
                     </div>
                     <div>
                       <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Đóng hòm phiếu</label>
-                      <input required type="datetime-local" value={formData.end_time} onChange={e => setFormData({...formData, end_time: e.target.value})} className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none dark:text-white" />
+                      <input required type="datetime-local" value={formData.end_time} onChange={e => setFormData({ ...formData, end_time: e.target.value })} className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none dark:text-white" />
                     </div>
                   </div>
                 </div>
@@ -274,7 +338,7 @@ const ManagePolls = () => {
                   <button type="button" onClick={() => setIsCreateModalOpen(false)} className="px-6 py-3 rounded-xl font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors">
                     Hủy
                   </button>
-                  <button type="submit" disabled={isSubmitting} className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-lg shadow-blue-500/30 transition-all flex items-center gap-2">
+                  <button type="submit" disabled={isSubmitting || selectedCandidateIds.length === 0} className="px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl font-bold shadow-lg shadow-blue-500/30 transition-all flex items-center gap-2">
                     {isSubmitting ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <><CheckCircle2 size={20} /> Lưu & Khởi tạo</>}
                   </button>
                 </div>

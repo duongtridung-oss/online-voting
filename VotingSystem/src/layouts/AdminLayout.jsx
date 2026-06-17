@@ -11,7 +11,8 @@ import {
   Menu, 
   X,
   Sun,
-  Moon
+  Moon,
+  Home
 } from 'lucide-react';
 
 const AdminLayout = () => {
@@ -92,7 +93,14 @@ const AdminLayout = () => {
           })}
         </nav>
 
-        <div className="p-4 border-t border-gray-200 dark:border-gray-800">
+        <div className="p-4 border-t border-gray-200 dark:border-gray-800 flex flex-col gap-2">
+          <Link 
+            to="/dashboard"
+            className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 font-medium transition-colors"
+          >
+            <Home size={20} />
+            Về trang Cử tri
+          </Link>
           <button 
             onClick={handleLogout}
             className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 font-medium transition-colors"

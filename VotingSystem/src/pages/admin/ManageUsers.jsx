@@ -46,6 +46,17 @@ const ManageUsers = () => {
     }
   };
 
+  const changeRole = async (id, newRole) => {
+    if (window.confirm(`Bạn có chắc chắn muốn chuyển người này thành ${newRole === 'candidate' ? 'Ứng viên' : newRole === 'admin' ? 'Admin' : 'Cử tri'}?`)) {
+      try {
+        await adminService.updateUser(id, { role: newRole });
+        fetchUsers();
+      } catch (error) {
+        console.error("Lỗi khi đổi quyền:", error);
+      }
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -79,6 +90,7 @@ const ManageUsers = () => {
                 <option value="all">Tất cả Vai trò</option>
                 <option value="admin">Quản trị viên</option>
                 <option value="user">Người dùng / Cử tri</option>
+                <option value="candidate">Ứng viên</option>
               </select>
             </div>
           </div>
@@ -99,11 +111,11 @@ const ManageUsers = () => {
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
               {users.map((user, index) => (
-                <motion.tr 
+                <motion.tr
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.2, delay: index * 0.05 }}
-                  key={user._id} 
+                  key={user._id}
                   className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors group"
                 >
                   <td className="px-6 py-4">
@@ -129,24 +141,33 @@ const ManageUsers = () => {
                     <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${
                       user.role === 'admin' 
                         ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' 
+                        : user.role === 'candidate'
+                        ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
                         : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
                     }`}>
-                      {user.role === 'admin' ? <Shield size={12} /> : <User size={12} />}
-                      {user.role === 'admin' ? 'Admin' : 'Cử tri'}
+                      {user.role === 'admin' ? <Shield size={12} /> : user.role === 'candidate' ? <User size={12} /> : <User size={12} />}
+                      {user.role === 'admin' ? 'Admin' : user.role === 'candidate' ? 'Ứng viên' : 'Cử tri'}
                     </span>
                   </td>
                   <td className="px-6 py-4">
-                    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${
-                      user.is_active 
-                        ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' 
+                    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${user.is_active
+                        ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
                         : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-                    }`}>
+                      }`}>
                       <span className={`w-1.5 h-1.5 rounded-full ${user.is_active ? 'bg-emerald-500' : 'bg-red-500'}`}></span>
                       {user.is_active ? 'Hoạt động' : 'Đã khóa'}
                     </span>
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      {user.role !== 'admin' && (
+                        <button
+                          onClick={() => changeRole(user._id, user.role === 'candidate' ? 'user' : 'candidate')}
+                          className="px-3 py-1.5 text-xs font-bold rounded-lg transition-colors bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-white"
+                        >
+                          {user.role === 'candidate' ? 'Hạ xuống Cử tri' : 'Lên Ứng viên'}
+                        </button>
+                      )}
                       <button 
                         onClick={() => toggleLock(user._id)}
                         className={`p-2 rounded-lg transition-colors ${user.is_active ? 'text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/30' : 'text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/30'}`} 
@@ -167,7 +188,7 @@ const ManageUsers = () => {
               ))}
             </tbody>
           </table>
-          
+
           {users.length === 0 && (
             <div className="text-center py-12">
               <p className="text-gray-500 dark:text-gray-400">Không tìm thấy người dùng nào phù hợp.</p>
