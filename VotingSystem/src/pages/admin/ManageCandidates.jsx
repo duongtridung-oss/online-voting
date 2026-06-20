@@ -1,31 +1,55 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Image as ImageIcon, Briefcase, Calendar, Mail, MapPin, Hash, Users } from 'lucide-react';
+import { Search, Image as ImageIcon, Briefcase, Calendar, Mail, MapPin, Hash, Users, BarChart2 } from 'lucide-react';
 import { adminService } from '../../services/adminService';
+import { pollService } from '../../services/pollService';
 
 const ManageCandidates = () => {
   const [candidates, setCandidates] = useState([]);
   const [search, setSearch] = useState('');
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchCandidates = async () => {
+  const [pollStats, setPollStats] = useState({});
+
+  const fetchCandidates = async (showLoading = true) => {
     try {
-      setIsLoading(true);
+      if (showLoading) setIsLoading(true);
       // Fetch users with role='candidate'
       const data = await adminService.getUsers(search, 'candidate');
       setCandidates(data);
+
+      // Fetch polls to calculate total votes for candidates
+      const polls = await pollService.getPolls('', 'all');
+      const voteMap = {};
+      polls.forEach(poll => {
+        poll.options.forEach(opt => {
+          if (opt.candidate_id) {
+            voteMap[opt.candidate_id] = (voteMap[opt.candidate_id] || 0) + opt.vote_count;
+          }
+        });
+      });
+      setPollStats(voteMap);
     } catch (error) {
       console.error("Lỗi khi tải danh sách ứng viên:", error);
     } finally {
-      setIsLoading(false);
+      if (showLoading) setIsLoading(false);
     }
   };
 
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
-      fetchCandidates();
+      fetchCandidates(true);
     }, 400);
-    return () => clearTimeout(delayDebounceFn);
+
+    // Auto-refresh stats every 5 seconds for real-time feel
+    const interval = setInterval(() => {
+      fetchCandidates(false);
+    }, 5000);
+
+    return () => {
+      clearTimeout(delayDebounceFn);
+      clearInterval(interval);
+    };
   }, [search]);
 
   return (
@@ -111,6 +135,11 @@ const ManageCandidates = () => {
                         <span>{candidate.party}</span>
                       </div>
                     )}
+                    
+                    <div className="flex items-center gap-2 font-bold text-blue-600 dark:text-blue-400">
+                      <BarChart2 size={16} />
+                      <span>{pollStats[candidate._id] || 0} Lượt bình chọn</span>
+                    </div>
                     {candidate.address && (
                       <div className="flex items-center gap-2">
                         <MapPin size={14} className="text-gray-400" />

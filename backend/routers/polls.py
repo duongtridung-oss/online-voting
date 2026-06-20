@@ -167,19 +167,7 @@ async def vote_poll(poll_id: PydanticObjectId, vote_req: VoteRequest, current_us
     if not (start <= now <= end):
         raise HTTPException(status_code=400, detail="Hiện không nằm trong thời gian bỏ phiếu hợp lệ.")
         
-    # Check if user already voted (Cache/Lock first, then DB)
     redis = await get_redis()
-    user_voted_key = f"voted:{poll_id}:{current_user.id}"
-    
-    try:
-        if await redis.get(user_voted_key):
-            raise HTTPException(status_code=400, detail="Bạn đã bỏ phiếu cho kỳ bầu cử này rồi (đang xử lý).")
-    except Exception:
-        pass
-
-    existing_vote = await Vote.find_one(Vote.user_id == str(current_user.id), Vote.poll_id == str(poll_id))
-    if existing_vote:
-        raise HTTPException(status_code=400, detail="Bạn đã bỏ phiếu cho kỳ bầu cử này rồi.")
         
     # Valid option
     option_found = any(opt.id == vote_req.option_id for opt in poll.options)
@@ -195,8 +183,6 @@ async def vote_poll(poll_id: PydanticObjectId, vote_req: VoteRequest, current_us
     try:
         # Push to Redis Queue
         await redis.lpush("vote_queue", json.dumps(vote_data))
-        # Lock user from double voting for 24 hours in cache
-        await redis.setex(user_voted_key, 86400, "1")
     except Exception as e:
         print(f"Lỗi Redis Queue: {e}")
         # Fallback to DB if Redis fails
